@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PSP Smart Parking Dashboard</title>
+<title>BK Smart Parking Dashboard</title>
 
 <style>
   :root {
@@ -232,18 +232,14 @@ body.dark .countbar.full {
   box-shadow: 0 0 20px rgba(239,68,68,0.5);
 }
 
-
   footer {
-  position: fixed;
-  bottom: 6px;
-  width: 100%;
+  position: static;
+  margin-top: 40px;
   text-align: center;
   font-size: 14px;
   opacity: 0.7;
-  padding: 6px 0;
-  background: transparent;
+  padding: 10px 0 20px;
 }
-
 
   @media (max-width: 700px) {
     header {
@@ -266,7 +262,7 @@ body.dark .countbar.full {
   <div style="display:flex;align-items:center;">
     <img src="https://cdn-icons-png.flaticon.com/512/709/709011.png" alt="Logo">
     <div>
-      <h1>PSP Smart Parking Dashboard</h1>
+      <h1>BK Smart Parking Dashboard</h1>
       <div class="small">Real-Time Parking Status via MQTT</div>
     </div>
   </div>
@@ -309,7 +305,7 @@ body.dark .countbar.full {
 </div>
 
 <footer>
-  © 2025 PSP Smart Parking | Designed by Lu Boon Keat
+  © 2025 BK Smart Parking | Designed by Lu Boon Keat
 </footer>
 
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -366,14 +362,14 @@ body.dark .countbar.full {
 
   if (free > 0) {
     summary.innerHTML = `
-      <div style="font-size:18px; font-weight:700;">Welcome to PSP Smart Parking</div>
+      <div style="font-size:18px; font-weight:700;">Welcome to BK Smart Parking</div>
       <div style="font-size:15px; margin-top:4px;">${free} Slot${free > 1 ? 's' : ''} Remaining | Parking Fee: RM5 per Entry</div>
     `;
     summary.classList.remove('full');
     summary.classList.add('available');
   } else {
     summary.innerHTML = `
-      <div style="font-size:18px; font-weight:700;">Welcome to PSP Smart Parking</div>
+      <div style="font-size:18px; font-weight:700;">Welcome to BK Smart Parking</div>
       <div style="font-size:15px; margin-top:4px;">Parking Full | No Entry 🚫</div>
     `;
     summary.classList.remove('available');
