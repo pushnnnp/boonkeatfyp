@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PSP Smart Parking Dashboard</title>
+
+<style>
+  :root {
+    --bg-light: linear-gradient(160deg, #eef2f7, #f9fafb);
+    --bg-dark: linear-gradient(160deg, #0f172a, #1e293b);
+    --card-light: rgba(255,255,255,0.9);
+    --card-dark: rgba(30,41,59,0.9);
+    --text-light: #111;
+    --text-dark: #e2e8f0;
+    --green-free: linear-gradient(135deg, #22c55e, #16a34a);
+    --red-busy: linear-gradient(135deg, #ef4444, #b91c1c);
+  }
+
+  body {
+    font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    background: var(--bg-light);
+    color: var(--text-light);
+    transition: background 0.6s ease, color 0.6s ease;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  body.dark { background: var(--bg-dark); color: var(--text-dark); }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 92%;
+    max-width: 1000px;
+    padding: 24px 0;
+  }
+  header img {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    margin-right: 16px;
+  }
+  header h1 { margin: 0; font-size: 26px; font-weight: 700; }
+  .small { font-size: 15px; opacity: 0.8; }
+
+  .card {
+    width: 92%;
+    max-width: 1000px;
+    background: var(--card-light);
+    border-radius: 20px;
+    padding: 18px 22px  ;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    backdrop-filter: blur(12px);
+    transition: all 0.6s ease;
+  }
+  body.dark .card {
+    background: var(--card-dark);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  }
+
+  .dark-toggle {
+    cursor: pointer;
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    background: #e2e8f0;
+    color: #111;
+    transition: all 0.4s ease;
+    user-select: none;
+  }
+  body.dark .dark-toggle {
+    background: #334155;
+    color: #e2e8f0;
+  }
+
+  .status-bubble {
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .parking-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 18px;
+    gap: 20px;
+  }
+
+  .label-exit, .label-entry {
+    font-weight: bold;
+    padding: 8px 24px;
+    border-radius: 999px;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 15px;
+  }
+  .label-exit {
+    background: linear-gradient(90deg, #ef4444, #b91c1c);
+    box-shadow: 0 0 10px rgba(239,68,68,0.4);
+  }
+  .label-entry {
+    background: linear-gradient(90deg, #22c55e, #15803d);
+    box-shadow: 0 0 10px rgba(34,197,94,0.4);
+  }
+
+  .slots-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: relative;
+    padding: 10px 0;
+  }
+
+  .slots-grid::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 3px;
+    height: 100%;
+    background: repeating-linear-gradient(to bottom, #aaa, #aaa 12px, transparent 12px, transparent 24px);
+    transform: translateX(-50%);
+    opacity: 0.3;
+  }
+
+  .slot-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 100px;
+  }
+
+  .slot {
+  width: 100px;
+  height: 130px;
+  display: flex;
+  flex-direction: column; 
+  justify-content: center;
+  align-items: center;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 16px;
+  color: white;
+  text-align: center;
+  transition: all 0.4s ease;
+  position: relative;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  line-height: 1.3;
+}
+
+  .slot.free {
+    background: var(--green-free);
+    box-shadow: 0 0 12px rgba(34,197,94,0.4);
+  }
+  .slot.occupied {
+    background: var(--red-busy);
+    box-shadow: 0 0 12px rgba(239,68,68,0.5);
+  }
+
+  /* --- Animation for state change --- */
+  @keyframes slotPulse {
+    0% { transform: scale(1); box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+    50% { transform: scale(1.1); box-shadow: 0 0 25px rgba(255,255,255,0.6); }
+    100% { transform: scale(1); box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+  }
+
+  .slot.animate {
+    animation: slotPulse 0.6s ease;
+  }
+
+  /* --- Fancy Welcome Summary Bar --- */
+.countbar {
+  text-align: center;
+  font-weight: 600;
+  border-radius: 18px;
+  padding: 20px 16px;
+  margin-top: 20px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  transition: all 0.6s ease;
+  line-height: 1.6;
+  letter-spacing: 0.4px;
+  font-size: 16px;
+}
+
+/* got space */
+.countbar.available {
+  background: linear-gradient(135deg, #bbf7d0, #86efac);
+  color: #064e3b;
+  box-shadow: 0 0 18px rgba(34,197,94,0.4);
+  animation: bannerGlowGreen 3s infinite alternate;
+}
+
+/* full */
+.countbar.full {
+  background: linear-gradient(135deg, #fecaca, #fca5a5);
+  color: #7f1d1d;
+  box-shadow: 0 0 18px rgba(239,68,68,0.4);
+  animation: bannerGlowRed 3s infinite alternate;
+}
+
+/* breathing light */
+@keyframes bannerGlowGreen {
+  from { box-shadow: 0 0 10px rgba(34,197,94,0.3); }
+  to { box-shadow: 0 0 25px rgba(34,197,94,0.7); }
+}
+@keyframes bannerGlowRed {
+  from { box-shadow: 0 0 10px rgba(239,68,68,0.3); }
+  to { box-shadow: 0 0 25px rgba(239,68,68,0.7); }
+}
+
+  body.dark .countbar {
+    background: rgba(36,52,71,0.85);
+  }
+
+  /* --- Dark mode version for summary bar --- */
+body.dark .countbar.available {
+  background: linear-gradient(135deg, #064e3b, #065f46);
+  color: #a7f3d0;
+  box-shadow: 0 0 20px rgba(34,197,94,0.5);
+}
+
+body.dark .countbar.full {
+  background: linear-gradient(135deg, #7f1d1d, #991b1b);
+  color: #fecaca;
+  box-shadow: 0 0 20px rgba(239,68,68,0.5);
+}
+
+
+  footer {
+  position: fixed;
+  bottom: 6px;
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.7;
+  padding: 6px 0;
+  background: transparent;
+}
+
+
+  @media (max-width: 700px) {
+    header {
+      flex-direction: column;
+      text-align: center;
+      gap: 10px;
+    }
+    .slot-row { gap: 50px; }
+    .slot {
+      width: 80px;
+      height: 100px;
+      font-size: 15px;
+    }
+  }
+</style>
+</head>
+
+<body>
+<header>
+  <div style="display:flex;align-items:center;">
+    <img src="https://cdn-icons-png.flaticon.com/512/709/709011.png" alt="Logo">
+    <div>
+      <h1>PSP Smart Parking Dashboard</h1>
+      <div class="small">Real-Time Parking Status via MQTT</div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="dark-toggle" id="themeToggle">Go Dark Mode 🌙</div>
+    <span id="connStatus" class="status-bubble" style="background:#ffd166;color:#452600">DISCONNECTED</span>
+  </div>
+</header>
+
+<div class="card">
+  <strong>Live</strong>
+  <div style="margin-top:10px; display:flex; gap:24px; flex-wrap:wrap;">
+    <div><div class="small">Gate IN</div><div id="gateIn" class="topic">-</div></div>
+    <div><div class="small">Gate OUT</div><div id="gateOut" class="topic">-</div></div>
+  </div>
+
+  <div class="parking-layout">
+    <div class="label-exit">Exit</div>
+
+    <div class="slots-grid" id="slotsBox">
+      <div class="slot-row">
+        <div class="slot free" id="slot4">S4<br>FREE</div>
+        <div class="slot free" id="slot3">S3<br>FREE</div>
+      </div>
+      <div class="slot-row">
+        <div class="slot free" id="slot5">S5<br>FREE</div>
+        <div class="slot free" id="slot2">S2<br>FREE</div>
+      </div>
+      <div class="slot-row">
+        <div class="slot free" id="slot6">S6<br>FREE</div>
+        <div class="slot free" id="slot1">S1<br>FREE</div>
+      </div>
+    </div>
+
+    <div class="label-entry">Entry</div>
+  </div>
+
+  <div class="countbar" id="slotSummary">Free 6 / In Use 0</div>
+</div>
+
+<footer>
+  © 2025 PSP Smart Parking | Designed by Lu Boon Keat
+</footer>
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script>
+  const client = mqtt.connect('ws://broker.hivemq.com:8000/mqtt');
+  const topics = [
+    'parking/gate/in','parking/gate/out',
+    'parking/slot/1','parking/slot/2','parking/slot/3',
+    'parking/slot/4','parking/slot/5','parking/slot/6'
+  ];
+
+  client.on('connect', () => {
+    setConnStatus('CONNECTED', '#c8f7d6', '#046b19');
+    topics.forEach(t => client.subscribe(t));
+  });
+
+  client.on('reconnect', () => setConnStatus('RECONNECTING', '#fff0b3', '#7a5600'));
+  client.on('offline', () => setConnStatus('DISCONNECTED', '#ffd166', '#452600'));
+
+  function setConnStatus(text, bg, color) {
+    const el = document.getElementById('connStatus');
+    el.textContent = text;
+    el.style.background = bg;
+    el.style.color = color;
+  }
+
+  client.on('message', (topic, payload) => {
+    const msg = payload.toString().trim().toUpperCase();
+    if (topic === 'parking/gate/in') document.getElementById('gateIn').textContent = msg;
+    else if (topic === 'parking/gate/out') document.getElementById('gateOut').textContent = msg;
+    else if (topic.startsWith('parking/slot/')) {
+      const slotNum = topic.split('/').pop();
+      const el = document.getElementById('slot' + slotNum);
+      if (el) {
+        const occupied = ['OCCUPIED', 'IN USE', '1', '[O]'].includes(msg);
+        const current = el.classList.contains('occupied');
+        if (occupied !== current) {
+          el.classList.toggle('free', !occupied);
+          el.classList.toggle('occupied', occupied);
+          el.innerHTML = `S${slotNum}<br>${occupied ? 'IN USE' : 'FREE'}`;
+          el.classList.add('animate');
+          setTimeout(() => el.classList.remove('animate'), 600);
+          updateSummary();
+        }
+      }
+    }
+  });
+
+  function updateSummary() {
+  const slots = document.querySelectorAll('.slot');
+  const inUse = document.querySelectorAll('.slot.occupied').length;
+  const free = slots.length - inUse;
+  const summary = document.getElementById('slotSummary');
+
+  if (free > 0) {
+    summary.innerHTML = `
+      <div style="font-size:18px; font-weight:700;">Welcome to PSP Smart Parking</div>
+      <div style="font-size:15px; margin-top:4px;">${free} Slot${free > 1 ? 's' : ''} Remaining | Parking Fee: RM5 per Entry</div>
+    `;
+    summary.classList.remove('full');
+    summary.classList.add('available');
+  } else {
+    summary.innerHTML = `
+      <div style="font-size:18px; font-weight:700;">Welcome to PSP Smart Parking</div>
+      <div style="font-size:15px; margin-top:4px;">Parking Full | No Entry 🚫</div>
+    `;
+    summary.classList.remove('available');
+    summary.classList.add('full');
+  }
+}
+  document.getElementById('themeToggle').onclick = () => {
+    document.body.classList.toggle('dark');
+    document.getElementById('themeToggle').textContent =
+      document.body.classList.contains('dark') ? 'Go Light Mode ☀️ ' : 'Go Dark Mode 🌙';
+  };
+</script>
+</body>
+</html>
