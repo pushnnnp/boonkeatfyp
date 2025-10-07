@@ -314,7 +314,7 @@ body.dark .countbar.full {
 
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <script>
-  const client = mqtt.connect('ws://broker.hivemq.com:8000/mqtt');
+  const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
   const topics = [
     'parking/gate/in','parking/gate/out',
     'parking/slot/1','parking/slot/2','parking/slot/3',
